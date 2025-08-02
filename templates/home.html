@@ -3,6 +3,11 @@
 {% block title %}Home{% endblock %}
 
 {% block extra_head %}
+<!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
+  <!-- Optional PNG alternative -->
+  <!-- <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}"> -->
+
 <style>
   .container {
     text-align: center;

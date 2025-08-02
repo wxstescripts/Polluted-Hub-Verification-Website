@@ -22,7 +22,7 @@ Session(app)
 # Discord OAuth2 and Bot Config from environment or hardcode for testing
 CLIENT_ID = os.getenv("CLIENT_ID") or 'YOUR_CLIENT_ID'
 CLIENT_SECRET = os.getenv("CLIENT_SECRET") or 'YOUR_CLIENT_SECRET'
-REDIRECT_URI = os.getenv("REDIRECT_URI") or 'http://localhost:5000/callback'
+REDIRECT_URI = os.getenv("REDIRECT_URI") or 'YOU_REDIRECT_URL'
 GUILD_ID = os.getenv("GUILD_ID") or 'YOUR_GUILD_ID'
 ROLE_ID = os.getenv("ROLE_ID") or 'YOUR_ROLE_ID'
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN") or 'YOUR_BOT_TOKEN'
@@ -195,11 +195,10 @@ def support():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# Run Discord bot and Flask app concurrently
 if __name__ == "__main__":
     def run_bot():
         bot.run(DISCORD_BOT_TOKEN)
 
     threading.Thread(target=run_bot).start()
-
-    port = int(os.environ.get("PORT", 5000))  # Render will inject PORT env var
-    app.run(host='0.0.0.0', port=port, debug=True, use_reloader=False)
+    app.run(debug=True, use_reloader=False)
