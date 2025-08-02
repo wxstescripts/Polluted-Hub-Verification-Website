@@ -1,11 +1,171 @@
 {% extends "base.html" %}
 
-{% block title %}Home - Discord Verification{% endblock %}
+{% block title %}Home{% endblock %}
+
+{% block extra_head %}
+<style>
+  .container {
+    text-align: center;
+    padding-top: 100px;
+  }
+
+  h1 {
+    color: #ffffff;
+    font-size: 48px;
+    margin-bottom: 20px;
+    text-shadow: 2px 2px 6px #000;
+  }
+
+  p {
+    font-size: 20px;
+    margin-bottom: 30px;
+    color: #cccccc;
+  }
+
+  .button {
+    background-color: #5865F2;
+    color: white;
+    padding: 12px 24px;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 18px;
+    box-shadow: 0 0 10px #5865F2;
+    transition: background-color 0.3s, box-shadow 0.3s;
+    display: inline-block;
+    margin: 10px;
+  }
+
+  .button:hover {
+    background-color: #4752c4;
+    box-shadow: 0 0 15px #5865F2;
+  }
+
+  #leaderboard-btn {
+    background: linear-gradient(135deg, #43e97b, #38f9d7);
+    box-shadow:
+      0 0 12px #43e97b,
+      0 0 30px #38f9d7;
+  }
+
+  #leaderboard-btn:hover {
+    box-shadow:
+      0 0 18px #43e97b,
+      0 0 36px #38f9d7;
+  }
+
+  #answer {
+    margin-top: 20px;
+    color: #eee;
+    font-size: 18px;
+    min-height: 40px;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 10px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 8px;
+  }
+
+  input#question {
+    padding: 10px;
+    width: 60%;
+    font-size: 16px;
+    border-radius: 6px;
+    border: none;
+    margin-right: 8px;
+  }
+
+  button#ask-btn {
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: #5865F2;
+    border: none;
+    border-radius: 6px;
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 0 8px #5865F2;
+  }
+
+  button#ask-btn:hover {
+    background-color: #4752c4;
+  }
+</style>
+{% endblock %}
 
 {% block content %}
-  <h1>Verify Your Discord Account</h1>
-  <p>
-    Secure your access by verifying your Discord account. Click the button below to sign in and get your exclusive role in our server.
-  </p>
-  <a href="{{ url_for('login') }}" class="btn" role="button" aria-label="Login with Discord">Login with Discord</a>
+<div class="container">
+  {% if user %}
+    <h1>Welcome, {{ user.username }}!</h1>
+    <p>Ask your support question below:</p>
+    <form id="support-form">
+      <input type="text" id="question" name="question" placeholder="Type your question here..." required />
+      <button id="ask-btn" type="submit">Ask</button>
+    </form>
+    <div id="answer" aria-live="polite"></div>
+    <p><a href="{{ url_for('logout') }}" class="button">Logout</a></p>
+  {% else %}
+    <h1>Welcome to Discord Verification</h1>
+    <p>Please log in with Discord to continue.</p>
+    <a href="{{ url_for('login') }}" class="button">🔒 Login with Discord</a>
+  {% endif %}
+  
+  <a href="https://polluted-hub-executions-leaderboard-site.onrender.com/public/leaderboard" 
+     class="button" id="leaderboard-btn" target="_blank" rel="noopener noreferrer"
+     title="View the Leaderboard [Shortcut: L]">
+    🏆 View Leaderboard
+  </a>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Voice greeting on page load
+  window.addEventListener('DOMContentLoaded', () => {
+    const msgText = {% if user %}"Welcome, {{ user.username }}. Ask your question to Polluted Hub support."{% else %}"Welcome to Discord Verification. Please log in to get started."{% endif %};
+    const msg = new SpeechSynthesisUtterance(msgText);
+    msg.pitch = 1.1;
+    msg.rate = 1.0;
+    msg.lang = 'en-US';
+    if ('speechSynthesis' in window) {
+      speechSynthesis.speak(msg);
+    }
+  });
+
+  // Shortcut key "L" for leaderboard
+  document.addEventListener('keydown', (e) => {
+    if (e.key.toLowerCase() === 'l') {
+      window.open('https://polluted-hub-executions-leaderboard-site.onrender.com/public/leaderboard', '_blank');
+    }
+  });
+
+  {% if user %}
+  // Support form submission handler
+  const form = document.getElementById('support-form');
+  const answerDiv = document.getElementById('answer');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const question = document.getElementById('question').value.trim();
+    if (!question) return;
+
+    answerDiv.textContent = "Thinking...";
+
+    try {
+      const res = await fetch('/support', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ question })
+      });
+      const data = await res.json();
+      if (data.answer) {
+        answerDiv.textContent = data.answer;
+      } else if (data.error) {
+        answerDiv.textContent = "Error: " + data.error;
+      }
+    } catch (error) {
+      answerDiv.textContent = "Error connecting to support.";
+    }
+  });
+  {% endif %}
+</script>
 {% endblock %}

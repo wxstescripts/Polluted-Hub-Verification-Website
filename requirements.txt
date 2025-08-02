@@ -1,5 +1,5 @@
 Flask
 discord.py
-python-dotenv
 requests
-
+Flask-Session
+openai==0.28

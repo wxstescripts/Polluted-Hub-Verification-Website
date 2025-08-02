@@ -1,139 +1,197 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>{% block title %}Discord Verification{% endblock %}</title>
+  <title>{% block title %}Polluted Hub{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  {% block extra_head %}{% endblock %}
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap');
+    :root {
+      --bg-light: #f4f4f4;
+      --text-light: #1a1a1a;
+      --bg-dark: #121212;
+      --text-dark: #f1f1f1;
+      --accent: #5865F2;
+    }
 
-    * {
-      margin: 0; padding: 0; box-sizing: border-box;
+    [data-theme="light"] {
+      background-color: var(--bg-light);
+      color: var(--text-light);
+    }
+
+    [data-theme="dark"] {
+      background-color: var(--bg-dark);
+      color: var(--text-dark);
     }
 
     body {
-      font-family: 'Poppins', sans-serif;
-      background: linear-gradient(135deg, #7289da, #99aab5);
-      height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #fff;
-      overflow: hidden;
-      position: relative;
-    }
-
-    body::before, body::after {
-      content: "";
-      position: absolute;
-      border-radius: 50%;
-      filter: blur(100px);
-      opacity: 0.6;
-      animation: pulse 8s infinite alternate ease-in-out;
-      z-index: 0;
-    }
-    body::before {
-      width: 300px;
-      height: 300px;
-      background: #7289da;
-      top: 20%;
-      left: 15%;
-    }
-    body::after {
-      width: 400px;
-      height: 400px;
-      background: #99aab5;
-      bottom: 20%;
-      right: 10%;
-      animation-delay: 4s;
-    }
-    @keyframes pulse {
-      0% {transform: scale(0.8);opacity: 0.6;}
-      100% {transform: scale(1.2);opacity: 0.3;}
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      transition: background-color 0.3s, color 0.3s;
     }
 
     .container {
-      position: relative;
-      background: rgba(32, 34, 37, 0.85);
-      border-radius: 20px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-      padding: 3rem 4rem;
-      max-width: 460px;
-      text-align: center;
-      z-index: 1;
+      padding: 2rem;
+      max-width: 960px;
+      margin: auto;
     }
 
-    h1 {
-      font-weight: 600;
-      font-size: 2.75rem;
-      margin-bottom: 1rem;
-      letter-spacing: 1.2px;
-      text-shadow: 0 2px 10px rgba(0,0,0,0.6);
-    }
-
-    p {
-      font-weight: 300;
-      font-size: 1.15rem;
-      color: #b9bbbe;
-      margin-bottom: 2.5rem;
-      line-height: 1.5;
-    }
-
-    .btn {
-      display: inline-block;
-      background: linear-gradient(90deg, #5865f2, #4752c4);
-      color: white;
-      font-weight: 600;
-      font-size: 1.1rem;
-      padding: 0.85rem 3rem;
-      border-radius: 9999px;
-      text-decoration: none;
-      box-shadow: 0 5px 15px rgba(88, 101, 242, 0.6);
-      transition: all 0.3s ease;
-      user-select: none;
+    .toggle-theme {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: none;
+      border: 2px solid var(--accent);
+      color: var(--accent);
+      padding: 0.4rem 0.8rem;
       cursor: pointer;
-      backdrop-filter: saturate(180%) blur(15px);
-      border: 1px solid rgba(88, 101, 242, 0.8);
+      border-radius: 6px;
     }
 
-    .btn:hover {
-      background: linear-gradient(90deg, #4752c4, #5865f2);
-      box-shadow: 0 8px 20px rgba(71, 82, 196, 0.8);
-      transform: translateY(-3px);
+    .typing {
+      font-size: 1.2rem;
+      white-space: pre;
+      overflow: hidden;
+      border-right: 0.1em solid;
+      animation: caret 0.75s steps(1) infinite;
     }
 
-    .footer {
-      margin-top: 3rem;
-      font-size: 0.85rem;
-      color: #b9bbbe;
-      text-shadow: none;
+    @keyframes caret {
+      50% { border-color: transparent; }
     }
 
-    @media (max-width: 520px) {
-      .container {
-        padding: 2rem 2rem;
-        max-width: 90vw;
-      }
-      h1 {
-        font-size: 2rem;
-      }
-      p {
-        font-size: 1rem;
-      }
-      .btn {
-        padding: 0.75rem 2rem;
-        font-size: 1rem;
-      }
+    .countdown {
+      margin: 1rem 0;
+      font-size: 1.1rem;
+    }
+
+    .bot-status {
+      margin-top: 1rem;
+      font-weight: bold;
+    }
+
+    .bot-online {
+      color: #43b581;
+    }
+
+    .bot-offline {
+      color: #f04747;
+    }
+
+    .music-visualizer {
+      width: 100%;
+      height: 50px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      gap: 5px;
+    }
+
+    .bar {
+      width: 4px;
+      background: #43b581;
+      animation: bounce 1s infinite ease-in-out;
+    }
+
+    .bar:nth-child(2) { animation-delay: 0.1s; }
+    .bar:nth-child(3) { animation-delay: 0.2s; }
+    .bar:nth-child(4) { animation-delay: 0.3s; }
+
+    @keyframes bounce {
+      0%, 100% { height: 10px; }
+      50% { height: 40px; }
     }
   </style>
-  {% block head %}{% endblock %}
 </head>
 <body>
-  <div class="container" role="main">
+  <button class="toggle-theme" onclick="toggleTheme()">Toggle Theme</button>
+  <div class="container">
     {% block content %}{% endblock %}
-    <div class="footer" aria-live="polite">
-      &copy; 2025 Your Server Name
-    </div>
   </div>
+
+  <script>
+    // Theme toggle
+    function toggleTheme() {
+      const html = document.documentElement;
+      html.dataset.theme = html.dataset.theme === "dark" ? "light" : "dark";
+    }
+
+    // Typing animation
+    function typeText(id, text, speed = 80) {
+      let i = 0;
+      function typing() {
+        if (i < text.length) {
+          document.getElementById(id).textContent += text.charAt(i);
+          i++;
+          setTimeout(typing, speed);
+        }
+      }
+      typing();
+    }
+
+    // Countdown Timer
+    function startCountdown(seconds, id) {
+      const el = document.getElementById(id);
+      function update() {
+        if (seconds >= 0) {
+          el.textContent = "Next reset in " + seconds + "s";
+          seconds--;
+          setTimeout(update, 1000);
+        } else {
+          el.textContent = "⏳ Reloading...";
+          location.reload();
+        }
+      }
+      update();
+    }
+
+    // Discord Bot Status Indicator
+    async function checkBotStatus() {
+      const el = document.getElementById('bot-status');
+      try {
+        const res = await fetch('/bot_status');  // Flask route required
+        const data = await res.json();
+        if (data.online) {
+          el.textContent = "Bot is Online ✅";
+          el.className = "bot-status bot-online";
+        } else {
+          el.textContent = "Bot is Offline ❌";
+          el.className = "bot-status bot-offline";
+        }
+      } catch {
+        el.textContent = "Bot status unavailable";
+        el.className = "bot-status bot-offline";
+      }
+    }
+    checkBotStatus();
+    setInterval(checkBotStatus, 15000);
+  </script>
+
+  <script>
+  document.querySelectorAll('.faq-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const isExpanded = item.getAttribute('aria-expanded') === 'true';
+      const answer = item.querySelector('.faq-answer');
+
+      // Collapse all other answers
+      document.querySelectorAll('.faq-item').forEach(otherItem => {
+        if (otherItem !== item) {
+          otherItem.setAttribute('aria-expanded', 'false');
+          const otherAnswer = otherItem.querySelector('.faq-answer');
+          if (otherAnswer) {
+            otherAnswer.setAttribute('aria-hidden', 'true');
+            otherAnswer.style.maxHeight = null;
+          }
+        }
+      });
+
+      // Toggle this one
+      item.setAttribute('aria-expanded', String(!isExpanded));
+      answer.setAttribute('aria-hidden', String(isExpanded));
+      answer.style.maxHeight = !isExpanded ? answer.scrollHeight + "px" : null;
+    });
+  });
+</script>
 </body>
 </html>

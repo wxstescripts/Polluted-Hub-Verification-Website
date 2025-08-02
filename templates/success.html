@@ -5,92 +5,321 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Verification Successful</title>
   <style>
+    /* Background setup */
     body {
+      margin: 0;
+      padding: 2rem;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
       background-image: url("{{ url_for('static', filename='img/pollutedhub_verifier_background.png') }}");
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
-      margin: 0;
-      padding: 2rem;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      text-align: center;
-      color: white;
-      position: relative;
-      z-index: 0;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #fff;
+      overflow-x: hidden;
+      position: relative;
     }
+    /* Dark overlay with glass effect container */
     body::before {
       content: "";
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.6);
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(6px);
       z-index: -1;
     }
+
+    /* Animated gradient behind container */
+    #glass-container {
+      background: linear-gradient(135deg, rgba(88,101,242,0.8), rgba(71,82,196,0.7));
+      background-size: 200% 200%;
+      animation: gradientShift 12s ease infinite;
+      border-radius: 16px;
+      padding: 2.5rem 3rem;
+      box-shadow: 0 0 40px rgba(88,101,242,0.7);
+      max-width: 480px;
+      width: 90vw;
+      text-align: center;
+      backdrop-filter: saturate(180%) blur(20px);
+      border: 1.5px solid rgba(255, 255, 255, 0.12);
+      box-sizing: border-box;
+      user-select: none;
+    }
+    @keyframes gradientShift {
+      0% {background-position: 0% 50%;}
+      50% {background-position: 100% 50%;}
+      100% {background-position: 0% 50%;}
+    }
+
+    /* Success icon with pulse */
+    .success-icon {
+      font-size: 5rem;
+      color: #43b581;
+      text-shadow:
+        0 0 8px #43b581,
+        0 0 20px #2f7f4a;
+      animation: pulseSuccess 2.8s ease-in-out infinite;
+      margin-bottom: 0.8rem;
+    }
+    @keyframes pulseSuccess {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.1); opacity: 0.8; }
+    }
+
     h1 {
-      font-size: 3rem;
+      margin: 0;
+      font-size: 2.5rem;
+      font-weight: 900;
+      line-height: 1.2;
+      animation: fadeInUp 1s ease forwards;
+      opacity: 0;
       margin-bottom: 1rem;
-      color: #43b581; /* Discord success green */
-      text-shadow: 0 0 8px rgba(0,0,0,0.9);
+      text-shadow: 0 0 8px rgba(0,0,0,0.8);
     }
     p {
-      font-size: 1.3rem;
-      max-width: 600px;
+      font-size: 1.2rem;
+      line-height: 1.6;
       margin-bottom: 2rem;
-      text-shadow: 0 0 6px rgba(0,0,0,0.9);
-      line-height: 1.5;
+      color: #d1d6ffdd;
+      text-shadow: 0 0 6px rgba(0,0,0,0.8);
+      animation: fadeInUp 1.2s ease forwards;
+      opacity: 0;
     }
+
+    /* Buttons container */
     .button-container {
       display: flex;
       flex-direction: column;
       gap: 1rem;
-      width: 240px;
+      width: 260px;
       margin: 0 auto;
+      animation: fadeInUp 1.4s ease forwards;
+      opacity: 0;
     }
+    /* Discord styled button */
     a.button {
-      display: block;
-      background-color: #5865F2; /* Discord blurple */
-      color: white;
-      padding: 0.85rem 1.8rem;
-      border-radius: 8px;
-      text-decoration: none;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.8rem;
+      padding: 0.9rem 2rem;
       font-weight: 700;
-      font-size: 1.1rem;
-      transition: background-color 0.3s ease;
-      box-shadow: 0 5px 10px rgba(88, 101, 242, 0.4);
+      font-size: 1.15rem;
+      color: white;
+      background: linear-gradient(135deg, #5865F2, #4752c4);
+      border-radius: 10px;
+      box-shadow:
+        0 5px 15px rgba(88, 101, 242, 0.5);
+      text-decoration: none;
+      transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.15s ease;
+      cursor: pointer;
       user-select: none;
+      outline-offset: 4px;
+    }
+    a.button:focus-visible {
+      outline: 3px solid #99aaff;
+      outline-offset: 4px;
     }
     a.button:hover {
-      background-color: #4752c4;
-      box-shadow: 0 6px 12px rgba(71, 82, 196, 0.6);
+      background: linear-gradient(135deg, #4752c4, #5865F2);
+      box-shadow:
+        0 6px 20px rgba(71, 82, 196, 0.7);
+      transform: translateY(-2px);
     }
     a.button:active {
-      background-color: #3a3f8b;
+      background: linear-gradient(135deg, #3a3f8b, #4a4e90);
       box-shadow: none;
       transform: translateY(1px);
     }
+
+    /* Discord icon SVG on buttons */
+    .discord-icon {
+      width: 24px;
+      height: 24px;
+      fill: white;
+      animation: pulseDiscord 2.5s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+    @keyframes pulseDiscord {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.7; transform: scale(1.15); }
+    }
+
     footer {
       margin-top: 3rem;
       font-size: 0.9rem;
       color: rgba(255, 255, 255, 0.6);
       text-shadow: none;
+      user-select: none;
+      animation: fadeInUp 1.6s ease forwards;
+      opacity: 0;
+    }
+
+    /* Local time display */
+    #local-time {
+      margin-top: 0.5rem;
+      font-size: 1rem;
+      color: #aab6ffdd;
+      user-select: text;
+    }
+
+    /* Animations for fadeInUp */
+    @keyframes fadeInUp {
+      0% { opacity: 0; transform: translateY(12px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Confetti canvas */
+    #confetti-canvas {
+      position: fixed;
+      pointer-events: none;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 9999;
+      user-select: none;
+    }
+
+    /* Responsive */
+    @media (max-width: 420px) {
+      #glass-container {
+        padding: 2rem 1.5rem;
+        width: 95vw;
+      }
+      h1 {
+        font-size: 2rem;
+      }
+      .button-container {
+        width: 100%;
+      }
+      a.button {
+        font-size: 1rem;
+        padding: 0.75rem 1.5rem;
+      }
     }
   </style>
 </head>
 <body>
-  <h1>✅ Successfully Verified, {{ username }}!</h1>
-  <p>
-    You have been granted access to the server. You can now close this window or return to Discord.
-  </p>
-  <div class="button-container">
-    <a href="https://discord.com/app" target="_blank" class="button">Open Discord</a>
-    <a href="{{ url_for('index') }}" class="button">Back to Home</a>
-  </div>
-  <footer>
-    &copy; 2025 Your Server Name
-  </footer>
+  <canvas id="confetti-canvas" aria-hidden="true"></canvas>
+  <main id="glass-container" role="main" aria-live="polite" aria-atomic="true" tabindex="-1">
+    <div class="success-icon" aria-hidden="true">✅</div>
+    <h1>Successfully Verified, {{ username }}!</h1>
+    <p>You have been granted access to the server. You can now close this window or return to Discord.</p>
+    <div class="button-container">
+      <a href="https://discord.com/app" target="_blank" rel="noopener" class="button" aria-label="Open Discord">
+        <svg class="discord-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 71 55" aria-hidden="true" focusable="false">
+          <path d="M60.104 4.552A58.89 58.89 0 0046.79.75a41.404 41.404 0 00-1.927 3.977 55.27 55.27 0 00-16.714 0 41.434 41.434 0 00-1.934-3.977 58.857 58.857 0 00-13.313 3.797C5.056 17.183 2.713 29.31 3.612 41.306a59.98 59.98 0 0017.334 9.91 43.056 43.056 0 003.871-6.206 35.168 35.168 0 01-5.58-2.66c.47-.342.935-.7 1.373-1.077a46.477 46.477 0 0042.203 0c.438.377.903.735 1.372 1.077a35.44 35.44 0 01-5.587 2.66 43.122 43.122 0 003.873 6.206 59.902 59.902 0 0017.34-9.91c.944-13.067-1.375-25.167-8.982-36.754zM23.725 37.092c-3.12 0-5.67-2.86-5.67-6.374 0-3.515 2.52-6.373 5.67-6.373 3.18 0 5.708 2.86 5.67 6.374 0 3.514-2.52 6.373-5.67 6.373zm23.55 0c-3.12 0-5.67-2.86-5.67-6.374 0-3.515 2.52-6.373 5.67-6.373 3.18 0 5.708 2.86 5.67 6.374 0 3.514-2.49 6.373-5.67 6.373z"/>
+        </svg>
+        Open Discord
+      </a>
+      <a href="{{ url_for('index') }}" class="button" aria-label="Back to Home">
+        Back to Home
+      </a>
+      <a href="https://polluted-hub-executions-leaderboard-site.onrender.com/public/leaderboard" target="_blank" rel="noopener" class="button" aria-label="Open Polluted Hub Executions Leaderboard">
+         View Executions Leaderboard
+      </a>
+    </div>
+    <footer>
+      &copy; 2025 Polluted Hub
+      <div id="local-time" aria-live="polite" aria-atomic="true" aria-label="Local time"></div>
+    </footer>
+  </main>
+
+  <script>
+    // Focus main container for accessibility
+    document.getElementById('glass-container').focus();
+
+    // Local time display updating every second
+    function updateLocalTime() {
+      const el = document.getElementById('local-time');
+      const now = new Date();
+      el.textContent = 'Local time: ' + now.toLocaleTimeString();
+    }
+    updateLocalTime();
+    setInterval(updateLocalTime, 1000);
+
+    // Confetti effect — simplified, performant, and customizable
+    const confettiCanvas = document.getElementById('confetti-canvas');
+    const ctx = confettiCanvas.getContext('2d');
+    let confettiPieces = [];
+
+    function randomRange(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+
+    class ConfettiPiece {
+      constructor() {
+        this.x = randomRange(0, window.innerWidth);
+        this.y = randomRange(-20, -100);
+        this.size = randomRange(6, 12);
+        this.speedY = randomRange(1, 3);
+        this.speedX = randomRange(-0.7, 0.7);
+        this.rotation = randomRange(0, 360);
+        this.rotationSpeed = randomRange(5, 15);
+        this.colors = ['#5865F2', '#43b581', '#ffffff', '#f04747', '#faa61a'];
+        this.color = this.colors[Math.floor(randomRange(0, this.colors.length))];
+      }
+
+      update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        this.rotation += this.rotationSpeed;
+
+        if (this.y > window.innerHeight) {
+          this.x = randomRange(0, window.innerWidth);
+          this.y = randomRange(-20, -100);
+          this.speedY = randomRange(1, 3);
+          this.speedX = randomRange(-0.7, 0.7);
+          this.rotation = randomRange(0, 360);
+          this.color = this.colors[Math.floor(randomRange(0, this.colors.length))];
+        }
+      }
+
+      draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate((this.rotation * Math.PI) / 180);
+        ctx.fillStyle = this.color;
+        ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size * 0.4);
+        ctx.restore();
+      }
+    }
+
+    function setupCanvas() {
+      confettiCanvas.width = window.innerWidth;
+      confettiCanvas.height = window.innerHeight;
+    }
+
+    function initConfetti() {
+      confettiPieces = [];
+      const count = Math.floor(window.innerWidth / 10);
+      for (let i = 0; i < count; i++) {
+        confettiPieces.push(new ConfettiPiece());
+      }
+    }
+
+    function animateConfetti() {
+      ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+      confettiPieces.forEach(piece => {
+        piece.update();
+        piece.draw();
+      });
+      requestAnimationFrame(animateConfetti);
+    }
+
+    setupCanvas();
+    initConfetti();
+    animateConfetti();
+
+    window.addEventListener('resize', () => {
+      setupCanvas();
+      initConfetti();
+    });
+  </script>
 </body>
 </html>

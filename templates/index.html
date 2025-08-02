@@ -1,95 +1,1022 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Welcome to Discord Verification</title>
-  <style>
-    body {
-      background-image: url("{{ url_for('static', filename='img/pollutedhub_verifier_background.png') }}");
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      margin: 0;
-      padding: 2rem;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      text-align: center;
-      color: white;
-      position: relative;
-      z-index: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    body::before {
-      content: "";
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.6);
-      z-index: -1;
-    }
-    h1 {
-      font-size: 3rem;
-      margin-bottom: 1rem;
-      text-shadow: 0 0 8px rgba(0,0,0,0.9);
-    }
-    p {
-      font-size: 1.3rem;
-      max-width: 600px;
-      margin-bottom: 2rem;
-      text-shadow: 0 0 6px rgba(0,0,0,0.9);
-      line-height: 1.5;
-    }
-    .button-container {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-      width: 240px;
-      margin: 0 auto;
-    }
-    a.button {
-      display: block;
-      background-color: #5865F2; /* Discord blurple */
-      color: white;
-      padding: 0.85rem 1.8rem;
-      border-radius: 8px;
-      text-decoration: none;
-      font-weight: 700;
-      font-size: 1.1rem;
-      transition: background-color 0.3s ease;
-      box-shadow: 0 5px 10px rgba(88, 101, 242, 0.4);
-      user-select: none;
-    }
-    a.button:hover {
-      background-color: #4752c4;
-      box-shadow: 0 6px 12px rgba(71, 82, 196, 0.6);
-    }
-    a.button:active {
-      background-color: #3a3f8b;
-      box-shadow: none;
-      transform: translateY(1px);
-    }
-    footer {
-      margin-top: 3rem;
-      font-size: 0.9rem;
-      color: rgba(255, 255, 255, 0.6);
-      text-shadow: none;
-    }
-  </style>
-</head>
-<body>
-  <h1>Welcome to Discord Verification</h1>
+{% extends "base.html" %}
+
+{% block title %}Welcome to Discord Verification{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* Your existing styles here, unchanged */
+  body {
+    background-image: url("{{ url_for('static', filename='img/pollutedhub_verifier_background.png') }}");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    margin: 0;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 100vh;
+    text-align: center;
+    color: white;
+    position: relative;
+    z-index: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #0a0a23;
+    overflow-x: hidden;
+    opacity: 0;
+    animation: fadeIn 1s forwards ease-in;
+  }
+
+  @keyframes fadeIn {
+    to { opacity: 1; }
+  }
+
+  /* === Heading === */
+  h1.typing {
+    font-size: 3.5rem;
+    font-weight: 900;
+    margin-bottom: 1rem;
+    color: #5865F2;
+    text-shadow:
+      0 0 6px #4752c4,
+      0 0 12px #5865F2,
+      0 0 24px #5865F2,
+      0 0 36px #4752c4;
+    animation: flicker 3s infinite alternate;
+    position: relative;
+    display: inline-block;
+  }
+  h1.typing::after {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 3px;
+    bottom: -8px;
+    left: 0;
+    background: linear-gradient(90deg, #5865F2, #4752c4);
+    box-shadow:
+      0 0 8px #5865F2,
+      0 0 20px #4752c4;
+    animation: underlineGlow 3s infinite alternate;
+    border-radius: 2px;
+  }
+  @keyframes underlineGlow {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+
+  @keyframes flicker {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.75; }
+  }
+
+  /* === Button Container === */
+  .button-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    width: 260px;
+    margin: 3rem auto 0;
+    position: relative;
+  }
+
+  a.button {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    background: linear-gradient(135deg, #5865F2, #4752c4);
+    color: #fff;
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 1.2rem;
+    text-align: center;
+    text-decoration: none;
+    box-shadow:
+      0 0 8px #5865F2,
+      0 0 20px #4752c4,
+      0 0 30px #5865F2;
+    user-select: none;
+    transition: box-shadow 0.3s ease, transform 0.2s ease;
+    cursor: pointer;
+  }
+  a.button:focus-visible {
+    outline: 3px solid #99aaff;
+    outline-offset: 2px;
+  }
+  a.button:hover {
+    box-shadow:
+      0 0 12px #5865F2,
+      0 0 30px #4752c4,
+      0 0 45px #5865F2;
+    transform: scale(1.05);
+  }
+  a.button:active {
+    box-shadow: none;
+    transform: scale(0.98);
+  }
+
+  /* Ripple effect from click position */
+  a.button::after {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+    width: 100px;
+    height: 100px;
+    background: rgba(255,255,255,0.3);
+    pointer-events: none;
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+    transition: transform 0.4s ease, opacity 0.8s ease;
+  }
+  a.button.ripple::after {
+    transform: translate(var(--ripple-x), var(--ripple-y)) scale(1);
+    opacity: 1;
+    transition: none;
+  }
+
+  /* Animate Discord icon */
+  .discord-icon {
+    width: 24px;
+    height: 24px;
+    fill: white;
+    animation: pulseDiscord 2.5s ease-in-out infinite;
+  }
+  @keyframes pulseDiscord {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.15); }
+  }
+
+  /* === Paragraph Text === */
+  p {
+    font-size: 1.25rem;
+    max-width: 650px;
+    margin: 0 auto 2rem;
+    line-height: 1.6;
+    color: #c1c5d1;
+    text-shadow: 0 0 6px rgba(71, 82, 196, 0.6);
+  }
+
+  /* === Countdown === */
+  .countdown {
+    font-size: 1.2rem;
+    color: #9aa0f7;
+    text-align: center;
+    margin-top: 1.5rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    position: relative;
+  }
+
+  /* Progress bar for countdown */
+  .countdown::before {
+    content: "";
+    position: absolute;
+    bottom: -6px;
+    left: 0;
+    width: var(--progress, 100%);
+    height: 4px;
+    background: linear-gradient(90deg, #5865F2, #4752c4);
+    border-radius: 2px;
+    transition: width 1s linear;
+  }
+
+  /* === Bot Status === */
+  .bot-status {
+    margin-top: 1rem;
+    font-weight: 700;
+    text-align: center;
+    color: #43b581;
+    text-shadow:
+      0 0 8px #43b581,
+      0 0 16px #43b581;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 1.15rem;
+  }
+  .bot-status svg {
+    width: 18px;
+    height: 18px;
+    animation: pulseGreen 2s infinite;
+  }
+  .bot-offline {
+    color: #f04747;
+    text-shadow:
+      0 0 8px #f04747,
+      0 0 16px #f04747;
+  }
+  .bot-offline svg {
+    animation: pulseRed 2s infinite;
+  }
+  @keyframes pulseGreen {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+  @keyframes pulseRed {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* === Footer === */
+  footer {
+    margin-top: 4rem;
+    font-size: 0.9rem;
+    color: #777ca1;
+    text-align: center;
+    user-select: none;
+    letter-spacing: 0.05em;
+  }
+
+  #local-time {
+    margin-top: 0.8rem;
+    font-size: 0.9rem;
+    color: #99aaff;
+  }
+
+  /* Scroll to top button */
+  #scroll-top-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: #5865F2;
+    border: none;
+    border-radius: 50%;
+    width: 48px;
+    height: 48px;
+    box-shadow:
+      0 0 8px #5865F2,
+      0 0 20px #4752c4;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 1000;
+  }
+  #scroll-top-btn.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Responsive tweaks */
+  @media (max-width: 400px) {
+    h1.typing { font-size: 2.5rem; }
+    .button-container { width: 100%; padding: 0 1rem; }
+    a.button { font-size: 1rem; padding: 0.8rem 1.2rem; }
+  }
+
+  /* Particle canvas */
+  canvas#particle-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  /* === New additions below === */
+
+  /* Dark / Light mode toggle */
+  #mode-toggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #5865F2;
+    border: none;
+    border-radius: 20px;
+    width: 60px;
+    height: 30px;
+    cursor: pointer;
+    box-shadow: 0 0 12px #5865F2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 6px;
+    user-select: none;
+    transition: background-color 0.3s ease;
+    z-index: 2000;
+  }
+  #mode-toggle .toggle-circle {
+    background: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    transition: transform 0.3s ease;
+  }
+  #mode-toggle[data-mode="dark"] {
+    background: #5865F2;
+  }
+  #mode-toggle[data-mode="light"] {
+    background: #c1c5d1;
+  }
+  #mode-toggle[data-mode="light"] .toggle-circle {
+    transform: translateX(30px);
+  }
+
+  body.light-mode {
+    background-color: #f5f6fb;
+    color: #121212;
+  }
+  body.light-mode p, body.light-mode footer {
+    color: #444;
+    text-shadow: none;
+  }
+  body.light-mode h1.typing {
+    color: #5865F2;
+    text-shadow: none;
+  }
+  body.light-mode a.button {
+    background: linear-gradient(135deg, #7485f7, #8a8fec);
+    color: #1a1a1a;
+    box-shadow: 0 0 8px #7485f7;
+  }
+  body.light-mode a.button:hover {
+    box-shadow: 0 0 14px #7485f7;
+  }
+  body.light-mode #scroll-top-btn {
+    background: #7485f7;
+    box-shadow: 0 0 14px #7485f7;
+    color: #1a1a1a;
+  }
+  body.light-mode .bot-status {
+    color: #3b7f3b;
+    text-shadow: none;
+  }
+  body.light-mode .bot-offline {
+    color: #bf4444;
+    text-shadow: none;
+  }
+
+  /* FAQ Accordion */
+  .faq-section {
+    margin: 3rem auto;
+    max-width: 800px;
+    text-align: left;
+    font-size: 1.1rem;
+  }
+  .faq-section h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #5865F2;
+    margin-bottom: 1rem;
+    text-shadow: 0 0 6px #4752c4;
+  }
+  .faq-item {
+    background: rgba(88, 101, 242, 0.1);
+    border-radius: 10px;
+    margin-bottom: 1rem;
+    box-shadow:
+      0 0 8px rgba(88, 101, 242, 0.3);
+    overflow: hidden;
+    transition: max-height 0.4s ease, padding 0.4s ease;
+    max-height: 56px;
+    padding: 0.8rem 1rem;
+    cursor: pointer;
+    position: relative;
+  }
+  .faq-item.active {
+    max-height: 400px;
+    padding: 1rem 1.5rem 1.5rem 1.5rem;
+    cursor: default;
+  }
+  .faq-question {
+    font-weight: 700;
+    color: #dde2ff;
+    user-select: none;
+  }
+  .faq-answer {
+    margin-top: 0.6rem;
+    color: #c1c5d1;
+    line-height: 1.5;
+    opacity: 0;
+    max-height: 0;
+    transition: opacity 0.5s ease, max-height 0.5s ease;
+  }
+  .faq-item.active .faq-answer {
+    opacity: 1;
+    max-height: 300px;
+  }
+  .faq-toggle-icon {
+    position: absolute;
+    right: 16px;
+    top: 18px;
+    width: 18px;
+    height: 18px;
+    stroke: #dde2ff;
+    stroke-width: 2.5;
+    transition: transform 0.3s ease;
+  }
+  .faq-item.active .faq-toggle-icon {
+    transform: rotate(45deg);
+  }
+
+  /* User Info Cards Section */
+  .user-cards-section {
+    margin: 3rem auto;
+    max-width: 900px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+  }
+  .user-card {
+    background: rgba(71, 82, 196, 0.2);
+    border-radius: 14px;
+    width: 220px;
+    padding: 1rem 1.5rem;
+    box-shadow:
+      0 0 8px rgba(88, 101, 242, 0.5);
+    transition: transform 0.25s ease;
+    cursor: default;
+  }
+  .user-card:hover {
+    transform: translateY(-8px);
+  }
+  .user-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    margin: 0 auto 0.75rem;
+    border: 3px solid #5865F2;
+    box-shadow: 0 0 8px #5865F2;
+    background-color: #0a0a23;
+    object-fit: cover;
+  }
+  .user-name {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #dde2ff;
+    text-align: center;
+    margin-bottom: 0.25rem;
+  }
+  .user-role {
+    text-align: center;
+    font-size: 0.95rem;
+    color: #99aaff;
+  }
+
+  /* Server Stats Section */
+  .stats-section {
+    margin: 3rem auto 6rem;
+    max-width: 700px;
+    background: rgba(71, 82, 196, 0.15);
+    border-radius: 14px;
+    padding: 2rem;
+    box-shadow: 0 0 16px rgba(88, 101, 242, 0.6);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 2rem;
+    color: #dde2ff;
+  }
+  .stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-weight: 600;
+  }
+  .stat-number {
+    font-size: 2.8rem;
+    color: #5865F2;
+    text-shadow: 0 0 6px #4752c4;
+    margin-bottom: 0.3rem;
+    transition: color 0.4s ease;
+  }
+  .stat-label {
+    font-size: 1rem;
+    color: #aabbff;
+  }
+
+  /* Chat Widget (mockup) */
+  .chat-widget {
+    position: fixed;
+    bottom: 30px;
+    left: 30px;
+    width: 300px;
+    height: 420px;
+    background: rgba(8, 8, 38, 0.85);
+    border-radius: 14px;
+    box-shadow: 0 0 18px #5865F2;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow: hidden;
+    user-select: none;
+    z-index: 1500;
+  }
+  .chat-header {
+    background: linear-gradient(135deg, #5865F2, #4752c4);
+    color: white;
+    font-weight: 700;
+    font-size: 1.2rem;
+    padding: 0.8rem 1rem;
+    text-align: center;
+    user-select: text;
+  }
+  .chat-messages {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    color: #dde2ff;
+    font-size: 0.95rem;
+    background: rgba(24, 24, 70, 0.5);
+  }
+  .chat-input-container {
+    padding: 0.75rem 1rem;
+    background: rgba(88, 101, 242, 0.4);
+    display: flex;
+    gap: 0.75rem;
+  }
+  .chat-input {
+    flex-grow: 1;
+    border: none;
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    font-size: 1rem;
+    outline: none;
+  }
+  .chat-send-btn {
+    background: #4752c4;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 0 1rem;
+    transition: background-color 0.25s ease;
+  }
+  .chat-send-btn:hover {
+    background: #3742a6;
+  }
+
+  /* Additional particle variant */
+  canvas#particle-canvas-2 {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: -2;
+    mix-blend-mode: screen;
+  }
+
+  /* Tooltip style for any new buttons */
+  .tooltip {
+    position: relative;
+    display: inline-block;
+    cursor: default;
+  }
+  .tooltip .tooltip-text {
+    visibility: hidden;
+    width: 180px;
+    background-color: #5865F2;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 8px;
+    position: absolute;
+    z-index: 2000;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    font-size: 0.9rem;
+    line-height: 1.2;
+  }
+  .tooltip:hover .tooltip-text,
+  .tooltip:focus-within .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+  }
+
+</style>
+{% endblock %}
+
+{% block content %}
+  <canvas id="particle-canvas" aria-hidden="true"></canvas>
+  <canvas id="particle-canvas-2" aria-hidden="true"></canvas>
+
+  <h1 id="welcome-text" class="typing" aria-label="Welcome to Discord Verification"></h1>
   <p>
-    Verify your Discord account to gain access to exclusive server roles and channels.
+    Verify your Discord account to gain access to exclusive server roles and channels.<br />
     Click the button below to sign in with Discord and complete the verification.
   </p>
+
   <div class="button-container">
-    <a href="{{ url_for('login') }}" class="button">Login with Discord</a>
+    <a href="{{ url_for('login') }}" class="button tooltip" role="button" aria-describedby="button-tooltip" tabindex="0">
+      <!-- Discord Icon SVG -->
+      <svg class="discord-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 71 55" aria-hidden="true" focusable="false">
+        <path d="M60.104 4.552A58.89 58.89 0 0046.79.75a41.404 41.404 0 00-1.927 3.977 55.27 55.27 0 00-16.714 0 41.434 41.434 0 00-1.934-3.977 58.857 58.857 0 00-13.313 3.797C5.056 17.183 2.713 29.31 3.612 41.306a59.98 59.98 0 0017.334 9.91 43.056 43.056 0 003.871-6.206 35.168 35.168 0 01-5.58-2.66c.47-.342.935-.7 1.373-1.077a46.477 46.477 0 0042.203 0c.438.377.903.735 1.372 1.077a35.44 35.44 0 01-5.587 2.66 43.122 43.122 0 003.873 6.206 59.902 59.902 0 0017.34-9.91c.944-13.067-1.375-25.167-8.982-36.754zM23.725 37.092c-3.12 0-5.67-2.86-5.67-6.374 0-3.515 2.52-6.373 5.67-6.373 3.18 0 5.708 2.86 5.67 6.374 0 3.514-2.52 6.373-5.67 6.373zm23.55 0c-3.12 0-5.67-2.86-5.67-6.374 0-3.515 2.52-6.373 5.67-6.373 3.18 0 5.708 2.86 5.67 6.374 0 3.514-2.49 6.373-5.67 6.373z"/>
+      </svg>
+      Login with Discord
+    </a>
+    <div id="button-tooltip" role="tooltip" style="color:#ddd; font-size:0.9rem; margin-top: 0.4rem;">
+      Securely sign in via Discord OAuth2 to verify your account and unlock exclusive perks.
+    </div>
   </div>
+
+  <div id="countdown" class="countdown" aria-live="polite" aria-atomic="true" style="--progress: 100%;"></div>
+  <div id="bot-status" class="bot-status" aria-live="polite" aria-atomic="true" role="status" aria-live="polite">
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="10"/></svg>
+    Checking bot status...
+  </div>
+
+  <!-- Dark/Light mode toggle -->
+  <button id="mode-toggle" aria-label="Toggle Dark/Light Mode" title="Toggle Dark/Light Mode" data-mode="dark" role="switch" aria-checked="false" tabindex="0">
+    <span class="toggle-circle"></span>
+  </button>
+
+  <!-- FAQ Accordion Section -->
+    <section class="faq-section" aria-label="Frequently Asked Questions">
+    <h2>Frequently Asked Questions</h2>
+
+    <article class="faq-item" tabindex="0" role="button" aria-expanded="false" aria-controls="faq1-content" id="faq1">
+        <div class="faq-question">
+        How do I verify my Discord account?
+        <svg class="faq-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" width="16" height="16"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+        <div class="faq-answer" id="faq1-content" aria-hidden="true">
+        Click the "Login with Discord" button above and follow the OAuth2 sign-in process. Once authenticated, the bot will assign you the correct roles.
+        </div>
+    </article>
+
+    <article class="faq-item" tabindex="0" role="button" aria-expanded="false" aria-controls="faq2-content" id="faq2">
+        <div class="faq-question">
+        Is my information safe?
+        <svg class="faq-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" width="16" height="16"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+        <div class="faq-answer" id="faq2-content" aria-hidden="true">
+        Yes! We only use the information necessary for verification and do not store your personal data beyond what is needed for role assignment.
+        </div>
+    </article>
+
+    <article class="faq-item" tabindex="0" role="button" aria-expanded="false" aria-controls="faq3-content" id="faq3">
+        <div class="faq-question">
+        Can I verify multiple accounts?
+        <svg class="faq-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" width="16" height="16"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+        <div class="faq-answer" id="faq3-content" aria-hidden="true">
+        We recommend verifying only your main Discord account to avoid conflicts with server rules.
+        </div>
+    </article>
+
+    <article class="faq-item" tabindex="0" role="button" aria-expanded="false" aria-controls="faq4-content" id="faq4">
+        <div class="faq-question">
+        What if the bot is offline?
+        <svg class="faq-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" width="16" height="16"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+        <div class="faq-answer" id="faq4-content" aria-hidden="true">
+        Please be patient; we monitor the bot status and resolve issues quickly. The status indicator above will inform you.
+        </div>
+    </article>
+    </section>
+
+<script>
+  const faqItems = document.querySelectorAll('.faq-item');
+
+  faqItems.forEach(item => {
+    item.addEventListener('click', () => toggleFaq(item));
+    item.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        toggleFaq(item);
+      }
+    });
+  });
+
+  function toggleFaq(item) {
+    const expanded = item.getAttribute('aria-expanded') === 'true';
+
+    // Close all items
+    faqItems.forEach(i => {
+      i.setAttribute('aria-expanded', 'false');
+      i.querySelector('.faq-answer').setAttribute('aria-hidden', 'true');
+    });
+
+    // If previously closed, open this one
+    if (!expanded) {
+      item.setAttribute('aria-expanded', 'true');
+      item.querySelector('.faq-answer').setAttribute('aria-hidden', 'false');
+    }
+  }
+</script>
+
+  <!-- User Cards Section (placeholders) -->
+  <section class="user-cards-section" aria-label="Sample Verified Users">
+    <div class="user-card" tabindex="0" aria-label="User: JaneDoe, Role: Verified Member">
+      <img class="user-avatar" src="{{ url_for('static', filename='img/sample_user1.png') }}" alt="JaneDoe's avatar">
+      <div class="user-name">JaneDoe</div>
+      <div class="user-role">Verified Member</div>
+    </div>
+    <div class="user-card" tabindex="0" aria-label="User: CoolUser123, Role: Verified Member">
+      <img class="user-avatar" src="{{ url_for('static', filename='img/sample_user2.png') }}" alt="CoolUser123's avatar">
+      <div class="user-name">CoolUser123</div>
+      <div class="user-role">Verified Member</div>
+    </div>
+    <div class="user-card" tabindex="0" aria-label="User: AnotherUser, Role: Verified Member">
+      <img class="user-avatar" src="{{ url_for('static', filename='img/sample_user3.png') }}" alt="AnotherUser's avatar">
+      <div class="user-name">AnotherUser</div>
+      <div class="user-role">Verified Member</div>
+    </div>
+  </section>
+
+  <!-- Server Stats Section -->
+  <section class="stats-section" aria-label="Server Statistics">
+    <div class="stat-item" tabindex="0">
+      <div class="stat-number" id="stat-users" aria-live="polite" aria-atomic="true">0</div>
+      <div class="stat-label">Verified Users</div>
+    </div>
+    <div class="stat-item" tabindex="0">
+      <div class="stat-number" id="stat-verifications" aria-live="polite" aria-atomic="true">0</div>
+      <div class="stat-label">Total Verifications</div>
+    </div>
+    <div class="stat-item" tabindex="0">
+      <div class="stat-number" id="stat-servers" aria-live="polite" aria-atomic="true">0</div>
+      <div class="stat-label">Servers Using Bot</div>
+    </div>
+    <div class="stat-item" tabindex="0">
+      <div class="stat-number" id="stat-botuptime" aria-live="polite" aria-atomic="true">0%</div>
+      <div class="stat-label">Bot Uptime</div>
+    </div>
+  </section>
+
+  <!-- Chat widget mockup -->
+  <div class="chat-widget" role="complementary" aria-label="Support chat widget">
+    <div class="chat-header" tabindex="0">Polluted Hub Support</div>
+    <div class="chat-messages" id="chat-messages" aria-live="polite" aria-atomic="false" role="log">
+      <div><strong>Bot:</strong> Welcome! Need help verifying? Just click the button above.</div>
+    </div>
+    <div class="chat-input-container">
+      <input type="text" id="chat-input" class="chat-input" placeholder="Type a message..." aria-label="Chat input" />
+      <button id="chat-send-btn" class="chat-send-btn" aria-label="Send message">Send</button>
+    </div>
+  </div>
+
+  <button id="scroll-top-btn" aria-label="Scroll to top" title="Scroll to top" type="button">&#8679;</button>
+
   <footer>
-    &copy; 2025 Your Server Name
+    &copy; 2025 Polluted Hub
+    <div id="local-time" aria-label="Local time"></div>
   </footer>
-</body>
-</html>
+
+  <script>
+    // Typing animation for welcome text
+    function typeText(id, text, speed = 80) {
+        let i = 0;
+        function typing() {
+        if (i < text.length) {
+            document.getElementById(id).textContent += text.charAt(i);
+            i++;
+            setTimeout(typing, speed);
+        }
+        }
+        typing();
+    }
+
+    // Countdown Timer with progress bar update
+    function startCountdown(seconds, id) {
+        const el = document.getElementById(id);
+        let remaining = seconds;
+        function update() {
+        if (remaining >= 0) {
+            el.textContent = "Next reset in " + remaining + "s";
+            el.style.setProperty('--progress', (remaining / seconds * 100) + '%');
+            remaining--;
+            setTimeout(update, 1000);
+        } else {
+            el.textContent = "⏳ Reloading...";
+            location.reload();
+        }
+        }
+        update();
+    }
+
+    // Discord Bot Status Indicator with pulsing icon and error handling
+    async function checkBotStatus() {
+        const el = document.getElementById('bot-status');
+        const icon = el.querySelector('svg');
+        try {
+        const res = await fetch('/bot_status');
+        if (!res.ok) throw new Error('Network response was not ok');
+        const data = await res.json();
+        if (data.online) {
+            el.textContent = "Bot is Online ✅";
+            el.className = "bot-status bot-online";
+            el.prepend(icon);
+            el.setAttribute('aria-live', 'polite');
+            el.setAttribute('aria-atomic', 'true');
+        } else {
+            el.textContent = "Bot is Offline ❌";
+            el.className = "bot-status bot-offline";
+            el.prepend(icon);
+            el.setAttribute('aria-live', 'polite');
+            el.setAttribute('aria-atomic', 'true');
+        }
+        } catch (error) {
+        el.textContent = "Bot status unavailable ⚠️";
+        el.className = "bot-status bot-offline";
+        el.prepend(icon);
+        console.error('Error fetching bot status:', error);
+        }
+    }
+    checkBotStatus();
+    setInterval(checkBotStatus, 15000);
+
+    // Ripple effect with click position for buttons
+    document.querySelectorAll('.button').forEach(btn => {
+        btn.addEventListener('click', function (e) {
+        const btn = e.currentTarget;
+        const rect = btn.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        btn.style.setProperty('--ripple-x', x + 'px');
+        btn.style.setProperty('--ripple-y', y + 'px');
+        btn.classList.remove('ripple');
+        void btn.offsetWidth; // trigger reflow
+        btn.classList.add('ripple');
+        });
+    });
+
+    // Local time display update every second
+    function updateLocalTime() {
+        const el = document.getElementById('local-time');
+        const now = new Date();
+        el.textContent = `Local time: ${now.toLocaleTimeString()}`;
+    }
+    updateLocalTime();
+    setInterval(updateLocalTime, 1000);
+
+    // Scroll to top button logic
+    const scrollBtn = document.getElementById('scroll-top-btn');
+    window.addEventListener('scroll', () => {
+        if (window.scrollY > 200) {
+        scrollBtn.classList.add('show');
+        } else {
+        scrollBtn.classList.remove('show');
+        }
+    });
+    scrollBtn.addEventListener('click', () => {
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    });
+
+    // Particle background animations for two canvases
+    const canvas1 = document.getElementById('particle-canvas');
+    const ctx1 = canvas1.getContext('2d');
+    const canvas2 = document.getElementById('particle-canvas-2');
+    const ctx2 = canvas2.getContext('2d');
+    let width, height;
+    let particles1 = [];
+    let particles2 = [];
+
+    function setupCanvas() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas1.width = width;
+        canvas1.height = height;
+        canvas2.width = width;
+        canvas2.height = height;
+    }
+
+    class Particle {
+        constructor(ctx, variant = 1) {
+        this.ctx = ctx;
+        this.variant = variant;
+        this.x = Math.random() * width;
+        this.y = Math.random() * height;
+        this.size = Math.random() * (variant === 1 ? 2 : 3) + 1;
+        this.speedX = (Math.random() - 0.5) * (variant === 1 ? 0.3 : 0.5);
+        this.speedY = (Math.random() - 0.5) * (variant === 1 ? 0.3 : 0.5);
+        this.opacity = Math.random() * (variant === 1 ? 0.5 : 0.3) + (variant === 1 ? 0.3 : 0.1);
+        }
+        update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        if (this.x < 0 || this.x > width) this.speedX *= -1;
+        if (this.y < 0 || this.y > height) this.speedY *= -1;
+        }
+        draw() {
+        this.ctx.beginPath();
+        this.ctx.fillStyle = `rgba(88, 101, 242, ${this.opacity})`;
+        this.ctx.shadowColor = '#5865F2';
+        this.ctx.shadowBlur = 8;
+        this.ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        this.ctx.fill();
+        }
+    }
+
+    function initParticles() {
+        particles1 = [];
+        particles2 = [];
+        for (let i = 0; i < 80; i++) {
+        particles1.push(new Particle(ctx1, 1));
+        particles2.push(new Particle(ctx2, 2));
+        }
+    }
+
+    function animate() {
+        ctx1.clearRect(0, 0, width, height);
+        ctx2.clearRect(0, 0, width, height);
+        particles1.forEach(p => {
+        p.update();
+        p.draw();
+        });
+        particles2.forEach(p => {
+        p.update();
+        p.draw();
+        });
+        requestAnimationFrame(animate);
+    }
+
+    setupCanvas();
+    initParticles();
+    animate();
+
+    window.addEventListener('resize', () => {
+        setupCanvas();
+        initParticles();
+    });
+
+    // Start animations and countdown
+    typeText("welcome-text", "Welcome to Discord Verification");
+    startCountdown(120, "countdown");
+
+    // FAQ accordion interaction
+    const faqItems = document.querySelectorAll('.faq-item');
+    faqItems.forEach(item => {
+        item.addEventListener('click', () => toggleFaq(item));
+        item.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            toggleFaq(item);
+        }
+        });
+    });
+    function toggleFaq(item) {
+        const expanded = item.getAttribute('aria-expanded') === 'true';
+        faqItems.forEach(i => {
+        i.setAttribute('aria-expanded', 'false');
+        i.querySelector('.faq-answer').setAttribute('aria-hidden', 'true');
+        });
+        if (!expanded) {
+        item.setAttribute('aria-expanded', 'true');
+        item.querySelector('.faq-answer').setAttribute('aria-hidden', 'false');
+        }
+    }
+
+    // Chat widget message sending mockup
+    const chatSendBtn = document.getElementById('chat-send-btn');
+    const chatInput = document.getElementById('chat-input');
+    const chatMessages = document.getElementById('chat-messages');
+    chatSendBtn.addEventListener('click', () => {
+        sendMessage();
+    });
+    chatInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendMessage();
+    });
+    function sendMessage() {
+        const msg = chatInput.value.trim();
+        if (!msg) return;
+
+        // Show user message in chat
+        const userMsg = document.createElement('div');
+        userMsg.textContent = `You: ${msg}`;
+        chatMessages.appendChild(userMsg);
+        chatInput.value = '';
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        // Call backend support API
+        fetch('/support', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ question: msg }),
+        })
+        .then(res => res.json())
+        .then(data => {
+        const botMsg = document.createElement('div');
+        if (data.answer) {
+            botMsg.innerHTML = `<strong>Bot:</strong> ${data.answer}`;
+        } else if (data.error) {
+            botMsg.innerHTML = `<strong>Bot:</strong> Sorry, an error occurred: ${data.error}`;
+        } else {
+            botMsg.innerHTML = `<strong>Bot:</strong> Sorry, I didn't get that.`;
+        }
+        chatMessages.appendChild(botMsg);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        })
+        .catch(err => {
+        const botMsg = document.createElement('div');
+        botMsg.innerHTML = `<strong>Bot:</strong> Sorry, unable to reach support server.`;
+        chatMessages.appendChild(botMsg);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        });
+    }
+</script>
+{% endblock %}
