@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Discord Verification{% endblock %}
+
+{% block content %}
+  <h1>Verify Your Discord Account</h1>
+  <p>
+    Secure your access by verifying your Discord account. Click the button below to sign in and get your exclusive role in our server.
+  </p>
+  <a href="{{ url_for('login') }}" class="btn" role="button" aria-label="Login with Discord">Login with Discord</a>
+{% endblock %}
