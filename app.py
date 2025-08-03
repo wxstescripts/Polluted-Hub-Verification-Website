@@ -1,215 +1,312 @@
-from flask import Flask, session, redirect, url_for, request, render_template, jsonify
-import requests
 import os
-from flask_session import Session
-import discord
-from discord.ext import commands
-import threading
-from dotenv import load_dotenv
-import openai
-import urllib.parse
-
-load_dotenv()
+from flask import Flask, request, jsonify, render_template, redirect, url_for, session, abort
+from datetime import datetime, timedelta
+from functools import wraps
+from sqlalchemy import create_engine, text
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.engine.url import make_url
+import psycopg2
+import psycopg2.extras
+from config import ADMIN_PASSWORD
+import sqlite3
 
 app = Flask(__name__)
+app.secret_key = os.urandom(24)
 
-# Secret key for sessions
-app.secret_key = os.getenv("SECRET_KEY") or os.urandom(24)
+# Database configuration
+DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///local.db")
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-# Configure server-side sessions
-app.config['SESSION_TYPE'] = 'filesystem'
-Session(app)
+app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Discord OAuth2 and Bot Config from environment or hardcode for testing
-CLIENT_ID = os.getenv("CLIENT_ID") or 'YOUR_CLIENT_ID'
-CLIENT_SECRET = os.getenv("CLIENT_SECRET") or 'YOUR_CLIENT_SECRET'
-REDIRECT_URI = os.getenv("REDIRECT_URI") or 'YOUR_REDIRECT_URL'
-GUILD_ID = os.getenv("GUILD_ID") or 'YOUR_GUILD_ID'
-ROLE_ID = os.getenv("ROLE_ID") or 'YOUR_ROLE_ID'
-DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN") or 'YOUR_BOT_TOKEN'
-openai.api_key = os.getenv("OPENAI_API_KEY")
+db = SQLAlchemy(app)
 
-DISCORD_API_BASE = "https://discord.com/api"
-DISCORD_OAUTH_SCOPES = "identify guilds.join"
+class Execution(db.Model):
+    __tablename__ = 'executions'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(64))
+    count = db.Column(db.Integer)
+    timestamp = db.Column(db.DateTime)
+    source = db.Column(db.String(64))
+    developer = db.Column(db.String(64))
 
-# Dummy bot status and stats (replace or expand as needed)
-BOT_ONLINE = True
-STATS = {
-    "verified_users": 1234,
-    "total_verifications": 4321,
-    "servers_using_bot": 25,
-    "bot_uptime_percent": 99.9
+with app.app_context():
+    db.create_all()
+
+settings = {
+    "weekly_reset_day": "Sunday",
+    "max_executions": 1000,
+    "dark_mode": False,
+    "auto_cleanup_enabled": True,
+    "reset_mode": "monthly"
 }
 
-# Discord bot setup
-intents = discord.Intents.default()
-intents.members = True
-bot = commands.Bot(command_prefix="!", intents=intents)
+def get_db_connection():
+    if DATABASE_URL.startswith("sqlite"):
+        engine = db.get_engine()
+        return engine.raw_connection()
+    url = make_url(DATABASE_URL)
+    conn = psycopg2.connect(
+        dbname=url.database,
+        user=url.username,
+        password=url.password,
+        host=url.host,
+        port=url.port
+    )
+    return conn
 
-@bot.event
-async def on_ready():
-    print(f"Bot is ready. Logged in as {bot.user}")
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('admin_logged_in'):
+            return redirect(url_for('admin_login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+def delete_old_records():
+    if not settings.get("auto_cleanup_enabled", True):
+        return
+    days = 7 if settings.get("reset_mode") == "weekly" else 30
+    cutoff = datetime.utcnow() - timedelta(days=days)
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('DELETE FROM executions WHERE timestamp < %s', (cutoff,))
+    conn.commit()
+    cur.close()
+    conn.close()
+
+def get_oldest_entry_date():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT MIN(timestamp) FROM executions")
+    row = cur.fetchone()
+    conn.close()
+    return row[0] if row else None
+
+def get_dict_cursor(conn):
+    # Handle SQLite
+    if isinstance(conn, sqlite3.Connection):
+        conn.row_factory = sqlite3.Row
+        return conn.cursor()
+    
+    # Handle PostgreSQL raw connection
+    try:
+        return conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    except TypeError:
+        # If conn is a SQLAlchemy connection, get raw connection
+        raw_conn = conn.connection
+        return raw_conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
 @app.route('/')
-@app.route('/index')
-@app.route('/home')
-def index():
-    user = session.get('user')  # None if not logged in
-    return render_template('index.html', user=user)
+def home():
+    return render_template('index.html')
 
-# Login route - redirect to Discord OAuth2 authorize URL
-@app.route('/login')
-def login():
-    encoded_redirect_uri = urllib.parse.quote_plus(REDIRECT_URI)
-    encoded_scopes = urllib.parse.quote_plus(DISCORD_OAUTH_SCOPES)
-    discord_auth_url = (
-        f"https://discord.com/api/oauth2/authorize"
-        f"?client_id={CLIENT_ID}"
-        f"&redirect_uri={encoded_redirect_uri}"
-        f"&response_type=code"
-        f"&scope={encoded_scopes}"
-    )
-    return redirect(discord_auth_url)
+@app.route('/leaderboard')
+def leaderboard():
+    one_month_ago = datetime.utcnow() - timedelta(days=30)
+    engine = db.get_engine()
+    with engine.connect() as conn:
+        result = conn.execute(text('''
+            SELECT username, SUM(count) as total, source, developer
+            FROM executions
+            WHERE timestamp >= :date
+            GROUP BY username, source, developer
+            ORDER BY total DESC
+            LIMIT 20
+        '''), {'date': one_month_ago})
+        leaderboard_data = [dict(row) for row in result]
+    return render_template('leaderboard.html', leaderboard=leaderboard_data)
 
-# OAuth2 callback route
-@app.route('/callback')
-def callback():
-    code = request.args.get('code')
-    if not code:
-        return "No code provided", 400
+@app.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
+    error = None
+    if request.method == 'POST':
+        password = request.form.get('password')
+        if password == ADMIN_PASSWORD:
+            session['admin_logged_in'] = True
+            return redirect(url_for('admin_dashboard'))
+        error = "Invalid password"
+    return render_template('admin_login.html', error=error)
 
-    # Exchange code for access token
-    data = {
-        "client_id": CLIENT_ID,
-        "client_secret": CLIENT_SECRET,
-        "grant_type": "authorization_code",
-        "code": code,
-        "redirect_uri": REDIRECT_URI,
-        "scope": DISCORD_OAUTH_SCOPES,
-    }
-    headers = {
-        "Content-Type": "application/x-www-form-urlencoded"
-    }
-    token_res = requests.post(f"{DISCORD_API_BASE}/oauth2/token", data=data, headers=headers)
-    if token_res.status_code != 200:
-        try:
-            error_json = token_res.json()
-        except Exception:
-            error_json = token_res.text
-        return f"Failed to get token: {error_json}", 400
+@app.route('/admin/logout')
+def admin_logout():
+    session.pop('admin_logged_in', None)
+    return redirect(url_for('home'))
 
-    token_json = token_res.json()
-    access_token = token_json.get('access_token')
-    if not access_token:
-        return "Failed to get access token", 400
+@app.route('/admin/dashboard')
+@admin_required
+def admin_dashboard():
+    return render_template('admin_panel.html',
+                           dark_mode=settings["dark_mode"],
+                           active_tab='admin_panel',
+                           oldest_date=get_oldest_entry_date())
 
-    # Fetch user info from Discord
-    user_res = requests.get(f"{DISCORD_API_BASE}/users/@me", headers={
-        "Authorization": f"Bearer {access_token}"
-    })
-    if user_res.status_code != 200:
-        return "Failed to fetch user info", 400
-    user_json = user_res.json()
+@app.route('/admin/reset_monthly')
+@admin_required
+def reset_monthly():
+    delete_old_records()
+    return jsonify({"status": "Old records deleted"}), 200
 
-    # Save user info in session
-    session['user'] = user_json
+@app.route('/admin/reset_leaderboard', methods=['POST'])
+@admin_required
+def reset_leaderboard():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('DELETE FROM executions')
+    conn.commit()
+    cur.close()
+    conn.close()
+    return jsonify({"status": "Leaderboard reset successful."}), 200
 
-    user_id = int(user_json["id"])
+@app.route('/admin/reset_user', methods=['POST'])
+@admin_required
+def reset_user():
+    username = request.form.get('username')
+    if not username:
+        return jsonify({"error": "Username required"}), 400
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('DELETE FROM executions WHERE username = %s', (username,))
+    conn.commit()
+    deleted = cur.rowcount
+    cur.close()
+    conn.close()
+    return jsonify({"status": f"{deleted} records deleted for {username}"}), 200
 
-    # Add user to guild
-    add_headers = {
-        "Authorization": f"Bot {DISCORD_BOT_TOKEN}",
-        "Content-Type": "application/json"
-    }
-    add_payload = {
-        "access_token": access_token
-    }
-    add_resp = requests.put(
-        f"{DISCORD_API_BASE}/guilds/{GUILD_ID}/members/{user_id}",
-        headers=add_headers,
-        json=add_payload
-    )
-    if add_resp.status_code in (201, 204):
-        print("User added to the guild successfully.")
-    else:
-        print(f"Failed to add user to guild: {add_resp.status_code} - {add_resp.text}")
-
-    # Schedule role addition asynchronously in bot loop
-    bot.loop.create_task(add_role_to_user(user_id))
-
-    return render_template("success.html", username=user_json["username"])
-
-# Logout route
-@app.route('/logout')
-def logout():
-    session.clear()
-    return redirect(url_for('index'))
-
-# Bot status API endpoint for frontend
-@app.route('/bot_status')
-def bot_status():
-    return jsonify({"online": BOT_ONLINE})
-
-# Stats API endpoint for frontend
-@app.route('/stats')
-def stats():
-    return jsonify(STATS)
-
-# Coroutine to add role to user
-async def add_role_to_user(user_id):
-    guild = bot.get_guild(int(GUILD_ID))
-    if not guild:
-        print("Guild not found.")
-        return
-    try:
-        member = await guild.fetch_member(user_id)
-    except discord.NotFound:
-        print("User not found in guild.")
-        return
-    except Exception as e:
-        print(f"Error fetching member: {e}")
-        return
-
-    role = guild.get_role(int(ROLE_ID))
-    if role:
-        await member.add_roles(role, reason="Verified via website")
-        print(f"Role added to {member.display_name}")
-    else:
-        print("Role not found.")
-
-# AI-powered support endpoint
-@app.route('/support', methods=['POST'])
-def support():
+@app.route('/api/track', methods=['POST'])
+def api_track():
     data = request.get_json()
-    if not data or 'question' not in data:
-        return jsonify({"error": "No question provided"}), 400
+    if not data or 'username' not in data or 'count' not in data:
+        return jsonify({'error': 'Invalid data'}), 400
 
-    question = data['question']
-
+    username = data['username']
     try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4o-mini",  # or another model you prefer
-            messages=[
-                {"role": "system", "content": "You are a helpful support assistant for Polluted Hub."},
-                {"role": "user", "content": question}
-            ],
-            max_tokens=150,
-            temperature=0.7,
+        count = int(data['count'])
+    except ValueError:
+        return jsonify({'error': 'Count must be an integer'}), 400
+
+    source = data.get('source', 'Unknown')
+    developer = data.get('developer', 'Unknown')
+    timestamp = datetime.utcnow()
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('''
+        INSERT INTO executions (username, count, timestamp, source, developer)
+        VALUES (%s, %s, %s, %s, %s)
+    ''', (username, count, timestamp, source, developer))
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    return jsonify({'status': 'success'}), 200
+
+@app.route('/public/leaderboard')
+def public_leaderboard_page():
+    one_month_ago = datetime.utcnow() - timedelta(days=30)
+    conn = get_db_connection()
+    cur = get_dict_cursor(conn)
+    cur.execute('''
+        SELECT username, SUM(count) as total, source, developer
+        FROM executions
+        WHERE timestamp >= %s
+        GROUP BY username, source, developer
+        ORDER BY total DESC
+        LIMIT 20
+    ''', (one_month_ago,))
+    data = cur.fetchall()
+    cur.close()
+    conn.close()
+    return render_template('public_leaderboard.html', leaderboard=data)
+
+@app.route('/api/save-admin-settings', methods=['POST'])
+@admin_required
+def save_admin_settings():
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Missing JSON data"}), 400
+
+    for key in ['cleanup_enabled', 'public_view_enabled', 'auto_refresh_enabled']:
+        if key in data and isinstance(data[key], bool):
+            settings[key] = data[key]
+        else:
+            return jsonify({"error": f"Invalid format for {key}"}), 400
+
+    return jsonify({"status": "Settings updated successfully"}), 200
+
+@app.route('/admin/settings')
+@admin_required
+def settings_page():
+    return render_template('admin_settings.html', settings=settings, active_tab='settings', admins=["admin1"])
+
+@app.route('/api/export/<filetype>')
+@admin_required
+def api_export(filetype):
+    if filetype == 'csv':
+        csv_data = "Name,Score\nAlice,100\nBob,90"
+        return app.response_class(
+            csv_data,
+            mimetype='text/csv',
+            headers={"Content-disposition": "attachment; filename=export.csv"}
         )
-        answer = response['choices'][0]['message']['content'].strip()
-        return jsonify({"answer": answer})
+    return "Unsupported export format", 400
 
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+@app.route('/admin/leaderboard')
+@admin_required
+def admin_leaderboard():
+    one_month_ago = datetime.utcnow() - timedelta(days=30)
+    conn = get_db_connection()
+    cur = conn.cursor()
 
-# Run Discord bot and Flask app concurrently
-if __name__ == "__main__":
-    def run_bot():
-        bot.run(DISCORD_BOT_TOKEN)
+    query = '''
+        SELECT username, SUM(count) as total, source, developer
+        FROM executions
+        WHERE timestamp >= %s
+        GROUP BY username, source, developer
+        ORDER BY total DESC
+        LIMIT 20
+    '''
 
-    import os
-    port = int(os.environ.get("PORT", 5000))
+    cur.execute(query, (one_month_ago,))
 
-    threading.Thread(target=run_bot).start()
-    app.run(host="0.0.0.0", port=port, debug=True, use_reloader=False)
+    columns = [desc[0] for desc in cur.description]
+    rows = cur.fetchall()
+    leaderboard_data = [dict(zip(columns, row)) for row in rows]
 
+    cur.close()
+    conn.close()
+
+    return render_template('admin_leaderboard.html', leaderboard=leaderboard_data, active_tab='admin_leaderboard')
+
+@app.errorhandler(403)
+def forbidden_error(error):
+    return render_template('403.html'), 403
+
+@app.route('/api/weekly-leaderboard')
+def weekly_leaderboard():
+    one_week_ago = datetime.utcnow() - timedelta(days=7)
+    conn = get_db_connection()
+    cur = get_dict_cursor(conn)
+    cur.execute('''
+        SELECT username, SUM(count) as executions, source, developer
+        FROM executions
+        WHERE timestamp >= %s
+        GROUP BY username, source, developer
+        ORDER BY executions DESC
+        LIMIT 25
+    ''', (one_week_ago,))
+    data = cur.fetchall()
+    cur.close()
+    conn.close()
+
+    # Add rank
+    for i, row in enumerate(data, 1):
+        row['rank'] = i
+
+    return jsonify(data)
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
