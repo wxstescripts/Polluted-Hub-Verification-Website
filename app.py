@@ -7,6 +7,7 @@ from discord.ext import commands
 import threading
 from dotenv import load_dotenv
 import openai
+import urllib.parse
 
 load_dotenv()
 
@@ -22,7 +23,7 @@ Session(app)
 # Discord OAuth2 and Bot Config from environment or hardcode for testing
 CLIENT_ID = os.getenv("CLIENT_ID") or 'YOUR_CLIENT_ID'
 CLIENT_SECRET = os.getenv("CLIENT_SECRET") or 'YOUR_CLIENT_SECRET'
-REDIRECT_URI = os.getenv("REDIRECT_URI") or 'YOU_REDIRECT_URL'
+REDIRECT_URI = os.getenv("REDIRECT_URI") or 'YOUR_REDIRECT_URL'
 GUILD_ID = os.getenv("GUILD_ID") or 'YOUR_GUILD_ID'
 ROLE_ID = os.getenv("ROLE_ID") or 'YOUR_ROLE_ID'
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN") or 'YOUR_BOT_TOKEN'
@@ -59,12 +60,14 @@ def index():
 # Login route - redirect to Discord OAuth2 authorize URL
 @app.route('/login')
 def login():
+    encoded_redirect_uri = urllib.parse.quote_plus(REDIRECT_URI)
+    encoded_scopes = urllib.parse.quote_plus(DISCORD_OAUTH_SCOPES)
     discord_auth_url = (
         f"https://discord.com/api/oauth2/authorize"
         f"?client_id={CLIENT_ID}"
-        f"&redirect_uri={REDIRECT_URI}"
+        f"&redirect_uri={encoded_redirect_uri}"
         f"&response_type=code"
-        f"&scope={DISCORD_OAUTH_SCOPES}"
+        f"&scope={encoded_scopes}"
     )
     return redirect(discord_auth_url)
 
@@ -89,7 +92,11 @@ def callback():
     }
     token_res = requests.post(f"{DISCORD_API_BASE}/oauth2/token", data=data, headers=headers)
     if token_res.status_code != 200:
-        return f"Failed to get token: {token_res.text}", 400
+        try:
+            error_json = token_res.json()
+        except Exception:
+            error_json = token_res.text
+        return f"Failed to get token: {error_json}", 400
 
     token_json = token_res.json()
     access_token = token_json.get('access_token')
@@ -136,7 +143,7 @@ def callback():
 @app.route('/logout')
 def logout():
     session.clear()
-    return redirect(url_for('home'))
+    return redirect(url_for('index'))
 
 # Bot status API endpoint for frontend
 @app.route('/bot_status')
