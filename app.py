@@ -208,5 +208,8 @@ if __name__ == "__main__":
     def run_bot():
         bot.run(DISCORD_BOT_TOKEN)
 
+    import os
+    port = int(os.environ.get("PORT", 5000))
+
     threading.Thread(target=run_bot).start()
-    app.run(debug=True, use_reloader=False)
+    app.run(host="0.0.0.0", port=port, debug=True, use_reloader=False)
