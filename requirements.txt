@@ -4,3 +4,4 @@ requests
 Flask-Session
 openai==0.28
 python-dotenv
+gunicorn
