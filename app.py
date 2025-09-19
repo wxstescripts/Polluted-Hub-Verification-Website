@@ -8,6 +8,8 @@ import threading
 from dotenv import load_dotenv
 import openai
 import urllib.parse
+from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
 
 load_dotenv()
 
@@ -19,6 +21,26 @@ app.secret_key = os.getenv("SECRET_KEY") or os.urandom(24)
 # Configure server-side sessions
 app.config['SESSION_TYPE'] = 'filesystem'
 Session(app)
+
+# === Database config ===
+db_url = os.getenv("DATABASE_URL")
+if db_url and db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql+psycopg2://", 1)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = db_url
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
+
+# === Define Models ===
+class Execution(db.Model):
+    __tablename__ = 'executions'
+
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(64))
+    count = db.Column(db.Integer)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    source = db.Column(db.String(64))
+    developer = db.Column(db.String(64))
 
 # Discord OAuth2 and Bot Config from environment or hardcode for testing
 CLIENT_ID = os.getenv("CLIENT_ID") or 'YOUR_CLIENT_ID'
@@ -138,6 +160,16 @@ def callback():
     # Schedule role addition asynchronously in bot loop
     bot.loop.create_task(add_role_to_user(user_id))
 
+    # Example: log verification into executions table
+    new_exec = Execution(
+        username=user_json["username"],
+        count=1,
+        source="verification",
+        developer="system"
+    )
+    db.session.add(new_exec)
+    db.session.commit()
+
     return render_template("success.html", username=user_json["username"])
 
 # Logout route
@@ -189,7 +221,7 @@ def support():
 
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-4o-mini",  # or another model you prefer
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "You are a helpful support assistant for Polluted Hub."},
                 {"role": "user", "content": question}
@@ -203,13 +235,33 @@ def support():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# Extra: manual execution logger endpoint
+@app.route('/log_execution', methods=['POST'])
+def log_execution():
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Missing payload"}), 400
+
+    new_exec = Execution(
+        username=data.get("username"),
+        count=data.get("count", 1),
+        source=data.get("source", "api"),
+        developer=data.get("developer", "unknown")
+    )
+    db.session.add(new_exec)
+    db.session.commit()
+    return jsonify({"status": "success", "id": new_exec.id})
+
 # Run Discord bot and Flask app concurrently
 if __name__ == "__main__":
     def run_bot():
         bot.run(DISCORD_BOT_TOKEN)
 
-    import os
     port = int(os.environ.get("PORT", 5000))
+
+    # Create tables if they don't exist yet
+    with app.app_context():
+        db.create_all()
 
     threading.Thread(target=run_bot).start()
     app.run(host="0.0.0.0", port=port, debug=True, use_reloader=False)
