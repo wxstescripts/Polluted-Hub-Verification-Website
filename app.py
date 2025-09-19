@@ -23,8 +23,12 @@ app.secret_key = os.getenv("SECRET_KEY") or os.urandom(24)
 app.config['SESSION_TYPE'] = 'filesystem'
 Session(app)
 
-# PostgreSQL connection (Render example: postgresql://USER:PASSWORD@HOST:PORT/DBNAME)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
+# PostgreSQL connection
+db_url = os.getenv("DATABASE_URL")
+if db_url and db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql+psycopg2://", 1)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -185,10 +189,21 @@ def add_execution():
     db.session.commit()
     return jsonify({"message": "Execution logged", "execution": new_execution.to_dict()}), 201
 
+# Alias route for /api/track
+@app.route('/api/track', methods=['POST'])
+def track_execution_alias():
+    return add_execution()
+
 # Fetch all executions
 @app.route('/executions', methods=['GET'])
 def get_executions():
     executions = Execution.query.order_by(Execution.timestamp.desc()).all()
+    return jsonify([e.to_dict() for e in executions])
+
+# Fetch last 20 executions (for debugging / leaderboard)
+@app.route('/api/track/recent', methods=['GET'])
+def get_recent_executions():
+    executions = Execution.query.order_by(Execution.timestamp.desc()).limit(20).all()
     return jsonify([e.to_dict() for e in executions])
 
 async def add_role_to_user(user_id):
