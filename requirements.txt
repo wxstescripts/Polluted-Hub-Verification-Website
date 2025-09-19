@@ -1,7 +1,8 @@
-Flask
+Flask, flask-sqlalchemy
 discord.py
 requests
 Flask-Session
 openai==0.28
 python-dotenv
 gunicorn
+psycopg2-binary
