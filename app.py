@@ -23,13 +23,20 @@ app.secret_key = os.getenv("SECRET_KEY") or os.urandom(24)
 app.config['SESSION_TYPE'] = 'filesystem'
 Session(app)
 
-# PostgreSQL connection
+# PostgreSQL connection (Render gives DATABASE_URL)
 db_url = os.getenv("DATABASE_URL")
+
+# Render sometimes gives old-style postgres:// URI, fix it
 if db_url and db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql+psycopg2://", 1)
 
+# Fallback: use SQLite if DATABASE_URL is not set
+if not db_url:
+    db_url = "sqlite:///local.db"
+
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 db = SQLAlchemy(app)
 
 # Define Executions model
